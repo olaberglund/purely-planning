@@ -2,11 +2,11 @@ module DayPicker where
 
 import Prelude
 
-import Data.Array (cons, delete, elem, length, replicate, singleton, splitAt, take)
+import Data.Array (cons, delete, elem, filter, length, mapWithIndex, replicate, singleton, splitAt)
 import Data.Date (Date, Month(..), Weekday(..), month, weekday, year)
 import Data.Date as Date
-import Data.Enum (enumFromTo, fromEnum, pred, succ)
-import Data.Maybe (fromMaybe)
+import Data.Enum (class Enum, enumFromTo, fromEnum, pred, succ)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
@@ -38,17 +38,17 @@ initialState input = { picks: [], currentDate: input }
 render ∷ ∀ m. State → H.ComponentHTML Action () m
 render state =
   HH.section_
-    [ HH.h1_ (mkText $ month (_.currentDate state))
+    [ HH.h1_ (mkText $ year (_.currentDate state))
+    , HH.div_
+        [ HH.button
+            [ HE.onClick \_ → Previous ]
+            [ HH.text "Previous" ]
+        , HH.button
+            [ HE.onClick \_ → Next ]
+            [ HH.text "Next" ]
+        ]
     , HH.table_
         [ tableBody
-        , HH.tfoot_
-            [ HH.button
-                [ HE.onClick \_ → Previous ]
-                [ HH.text "Previous" ]
-            , HH.button
-                [ HE.onClick \_ → Next ]
-                [ HH.text "Next" ]
-            ]
         ]
     , HH.p_ (mkText state.picks)
     ]
@@ -57,10 +57,10 @@ render state =
   tableBody = HH.tbody_ (map HH.tr_ (cons tableHeads (dayMatrix (_.currentDate state))))
 
 tableHeads ∷ ∀ w. Array (HH.HTML w Action)
-tableHeads = map (HH.th_ <<< mkText) weekdays
+tableHeads = cons (HH.th_ []) $ map (HH.th_ <<< mkText) weekdays
 
 dataRow ∷ ∀ w. Date → Array (HH.HTML w Action)
-dataRow = datesOfMonth >=> Data >>> dataCell >>> pure >>> take (length weekdays)
+dataRow = datesOfMonth >=> Data >>> dataCell >>> pure
 
 dataCell ∷ ∀ w. Padded Date → HH.HTML w Action
 dataCell m =
@@ -69,13 +69,23 @@ dataCell m =
     Padding → HH.td_ []
 
 dayMatrix ∷ ∀ w. Date → Matrix (HH.HTML w Action)
-dayMatrix date = chunks (length weekdays) paddedDays
+dayMatrix date = mapWithIndex addWeek (chunks (length weekdays) (paddedDays))
   where
-  paddedDays ∷ Array (HH.HTML w Action)
-  paddedDays = paddedStart <> replicate (length weekdays * 6 - (length paddedStart)) paddedCell
+  addWeek ∷ Int → Array (HH.HTML w Action) → Array (HH.HTML w Action)
+  addWeek i =
+    -- gymnastics for the first month of the year
+    -- when the first days aren't actually part of 
+    -- the first year (but the last of the previous year)
+    if currentBaseWeek > 51 then addWeekHeader (max ((currentBaseWeek + i) `mod` (currentBaseWeek + 1)) i)
+    else addWeekHeader (currentBaseWeek + i)
 
-  paddedStart ∷ Array (HH.HTML w Action)
-  paddedStart = insertMany (fromEnum (firstWeekDay date) - 1) paddedCell (dataRow date)
+  currentBaseWeek = week (firstDateOfMonth date)
+
+  addWeekHeader ∷ Int → Array (HH.HTML w Action) → Array (HH.HTML w Action)
+  addWeekHeader w = cons (HH.th_ [ HH.text $ show w ])
+
+  paddedDays ∷ Array (HH.HTML w Action)
+  paddedDays = insertMany (fromEnum (firstWeekDay date) - 1) paddedCell (dataRow date)
 
   paddedCell ∷ HH.HTML w Action
   paddedCell = (dataCell (Padding ∷ Padded Date))
@@ -87,10 +97,10 @@ mkText ∷ ∀ w i a. Show a ⇒ a → Array (HH.HTML w i)
 mkText = singleton <<< HH.text <<< show
 
 datesOfMonth ∷ Date → Array Date
-datesOfMonth date = map (Date.canonicalDate (year date) (month date)) (enumFromTo bottom lastDay)
-  where
-  lastDay ∷ Date.Day
-  lastDay = (Date.lastDayOfMonth (Date.year date) (Date.month date))
+datesOfMonth date = enumFromTo (firstDateOfMonth date) (lastDateOfMonth date)
+
+lastDateOfMonth ∷ Date → Date
+lastDateOfMonth date = Date.canonicalDate (year date) (month date) top
 
 chunks ∷ ∀ a. Int → Array a → Matrix a
 chunks _ [] = []
@@ -101,10 +111,14 @@ chunks n xs =
     cons before (chunks n after)
 
 nextMonth ∷ Date → Date
-nextMonth = adjustToMonth <*> fromMaybe January <<< succ <<< month
+nextMonth d = case succ (month d) of
+  Just m → adjustToMonth d m
+  Nothing → Date.canonicalDate (fromMaybe (year d) (succ $ year d)) January bottom
 
 prevMonth ∷ Date → Date
-prevMonth = adjustToMonth <*> fromMaybe December <<< pred <<< month
+prevMonth d = case pred (month d) of
+  Just m → adjustToMonth d m
+  Nothing → Date.canonicalDate (fromMaybe (year d) (pred $ year d)) December bottom
 
 adjustToMonth ∷ Date → Month → Date
 adjustToMonth date m = Date.canonicalDate (year date) m bottom
@@ -123,3 +137,10 @@ handleAction = case _ of
     H.modify_ \s → s { currentDate = prevMonth s.currentDate }
   Pick d → do
     H.modify_ \s → s { picks = if d `elem` s.picks then delete d s.picks else cons d s.picks }
+
+week ∷ Date → Int
+week d = if nbrMondaysUpUntilDate == 0 then week lastDateOfLastYear else nbrMondaysUpUntilDate
+  where
+  lastDateOfLastYear = (Date.canonicalDate (fromMaybe (year d) (pred $ year d)) top top)
+  firstDayOfYear = (firstDateOfMonth (adjustToMonth d January))
+  nbrMondaysUpUntilDate = length $ filter (weekday >>> (==) Monday) (enumFromTo firstDayOfYear d)
