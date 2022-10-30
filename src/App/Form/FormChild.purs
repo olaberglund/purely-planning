@@ -2,7 +2,6 @@ module FormChild where
 
 import Prelude
 
-import Data.DateTime as Date
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Effect.Aff (Aff)
@@ -10,33 +9,16 @@ import Formless as F
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
+import Types (Shift)
 import UI (radioGroup)
 
 data Action
   = Receive FormContext
   | Eval FormlessAction
 
-data Time = Time Date.Hour Date.Minute
-
-derive instance eqTime ∷ Eq Time
-
-type Hours = { from ∷ Time, to ∷ Time }
-
-newtype Shift = Shift { label ∷ String, hours ∷ Hours }
+type Input = { radioOptions ∷ Array (Maybe Shift) }
 
 type Picked = Maybe Shift
-
-derive newtype instance eqShift ∷ Eq Shift
-
-instance Show Time where
-  show (Time h m) = show h <> ":" <> show m
-
-instance Show Shift where
-  show (Shift { label }) = show label
-
-type Input = { radioOptions ∷ Array Picked }
-
-type State = Input
 
 type FormContext = F.FormContext (Form F.FieldState) (Form (F.FieldAction Action)) Input Action
 type FormlessAction = F.FormlessAction (Form F.FieldState)
@@ -45,16 +27,21 @@ type Form ∷ (Type → Type → Type → Type) → Row Type
 type Form f = (picked ∷ f Picked Void Picked)
 
 form ∷ ∀ q. H.Component q Input { | Form F.FieldOutput } Aff
-form = F.formless { liftAction: Eval } initialForm $ H.mkComponent
-  { initialState: identity
-  , render
-  , eval: H.mkEval $ H.defaultEval
-      { receive = Just <<< Receive
-      , handleAction = handleAction
-      , handleQuery = handleQuery
-      }
-  }
+form = F.formless { liftAction: Eval } initialForm hComponent
   where
+
+  hComponent =
+    ( H.mkComponent
+        { initialState: identity
+        , render
+        , eval: H.mkEval $ H.defaultEval
+            { receive = Just <<< Receive
+            , handleAction = handleAction
+            , handleQuery = handleQuery
+            }
+        }
+    )
+
   initialForm ∷ { | Form F.FieldInput }
   initialForm = { picked: Nothing }
 

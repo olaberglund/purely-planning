@@ -1,52 +1,61 @@
 module FormParent where
 
-import Data.Either
-import Data.Maybe
 import Prelude
 
-import DOM.HTML.Indexed (HTMLinput)
-import Data.Array (replicate)
-import Data.Const (Const)
+import Data.Array (head, replicate, tail)
 import Data.DateTime as Date
-import Data.Int as Int
+import Data.Maybe (Maybe(..), fromMaybe)
 import Effect.Aff (Aff)
-import FormChild as FC (Form, form, Input)
+import FormChild as FC
 import Formless as F
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
-import Halogen.HTML.Properties as HP
 import Type.Proxy (Proxy(..))
+import Types (Hours, Shift(..), Time(..))
 
-data Action = HandleForm { | FC.Form F.FieldInput } | ChangeOptions FC.Input
+type Options = Array Shift
 
--- old mock:
--- where
--- shiftHours ∷ Hours
--- shiftHours = { from: (Time (Date.hour input) (Date.minute input)), to: (Time (Date.hour input) (Date.minute input)) }
+data Action = HandleForm { | FC.Form F.FieldInput } | ChangeOptions Options | RemoveFirst Options
 
-formParent ∷ ∀ q i o. H.Component q i o Aff
+type Input = Date.Time
+
+type State = { options ∷ Options, result ∷ (Maybe Shift) }
+
+initialState ∷ Input → State
+initialState input = { options: replicate 2 (Shift { label: "C", hours: shiftHours }), result: Nothing }
+  where
+  shiftHours ∷ Hours
+  shiftHours = { from: (Time (Date.hour input) (Date.minute input)), to: (Time (Date.hour input) (Date.minute input)) }
+
+formParent ∷ ∀ q o. H.Component q Input o Aff
 formParent = H.mkComponent
-  { initialState: \_ → { options: [], result: Nothing }
+  { initialState: initialState
   , render
   , eval: H.mkEval $ H.defaultEval { handleAction = handleAction }
   }
   where
   handleAction = case _ of
     HandleForm result →
-      H.modify_ _ { result = Just result }
+      H.modify_ _ { result = result.picked }
 
     ChangeOptions options →
       H.modify_ _ { options = options }
+
+    RemoveFirst options →
+      H.modify_ _ { options = fromMaybe [] (tail options) }
 
   render state =
     HH.article_
       [ HH.h1_ [ HH.text "Form" ]
       , HH.p_ [ HH.text "this is a form with dynamic options" ]
-      , HH.slot (Proxy ∷ Proxy "inner") unit form { radioOptions: state.options } HandleForm
+      , HH.slot (Proxy ∷ Proxy "inner") unit FC.form { radioOptions: map Just state.options } HandleForm
       , HH.button
-          [ HE.onClick \_ → ChangeOptions (state.options <> []) ]
+          [ HE.onClick \_ → ChangeOptions $ state.options <> fromMaybe [] (tail state.options) ]
           [ HH.text "Add 'Three' to options" ]
+      , HH.button
+          [ HE.onClick \_ → RemoveFirst $ state.options ]
+          [ HH.text "Remove first option" ]
       ]
 
 -----
