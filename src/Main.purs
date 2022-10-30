@@ -1,16 +1,17 @@
 module Main where
 
-import Prelude (Unit, bind)
-
-import DayPicker
+import App.Form.FormParent (formParent)
+import Data.DateTime (time)
+import Data.Unit (unit)
 import Effect (Effect)
-import Effect.Now (nowDate)
+import Effect.Now (nowDate, nowDateTime)
 import Halogen.Aff as HA
 import Halogen.VDom.Driver (runUI)
+import Prelude (Unit, bind, (=<<))
 
 main ∷ Effect Unit
 main = do
-  today ← nowDate
+  dt ← nowDateTime
   HA.runHalogenAff do
     body ← HA.awaitBody
-    runUI component today body
+    runUI formParent (time dt) body

@@ -6,11 +6,12 @@
   , "effect"
   , "enums"
   , "halogen"
+  , "halogen-formless"
   , "maybe"
   , "now"
   , "prelude"
   , "psci-support"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs", "test/**/*.purs"]
+, sources = [ "src/**/*.purs", "test/**/*.purs" ]
 }

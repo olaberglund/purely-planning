@@ -5,7 +5,7 @@ import Prelude
 import Data.Array (cons, delete, elem, filter, length, mapWithIndex, replicate, singleton, splitAt)
 import Data.Date (Date, Month(..), Weekday(..), month, weekday, year)
 import Data.Date as Date
-import Data.Enum (class Enum, enumFromTo, fromEnum, pred, succ)
+import Data.Enum (enumFromTo, fromEnum, pred, succ)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Halogen as H
 import Halogen.HTML as HH
@@ -24,7 +24,9 @@ data Action = Next | Previous | Pick Date
 
 type State = { picks ∷ Array Date, currentDate ∷ Date }
 
-component ∷ ∀ q o m. H.Component q Input o m
+type Output = Array Date
+
+component ∷ ∀ q m. H.Component q Input Output m
 component =
   H.mkComponent
     { initialState
@@ -48,8 +50,7 @@ render state =
             [ HH.text "Next" ]
         ]
     , HH.table_
-        [ tableBody
-        ]
+        [ tableBody ]
     , HH.p_ (mkText state.picks)
     ]
   where
@@ -129,7 +130,7 @@ firstDateOfMonth = adjustToMonth <*> month
 firstWeekDay ∷ Date → Weekday
 firstWeekDay = weekday <<< firstDateOfMonth
 
-handleAction ∷ ∀ cs o m. Action → H.HalogenM State Action cs o m Unit
+handleAction ∷ ∀ cs m. Action → H.HalogenM State Action cs Output m Unit
 handleAction = case _ of
   Next → do
     H.modify_ \s → s { currentDate = nextMonth s.currentDate }
@@ -137,6 +138,8 @@ handleAction = case _ of
     H.modify_ \s → s { currentDate = prevMonth s.currentDate }
   Pick d → do
     H.modify_ \s → s { picks = if d `elem` s.picks then delete d s.picks else cons d s.picks }
+    picks ← H.gets _.picks
+    H.raise picks
 
 week ∷ Date → Int
 week d = if nbrMondaysUpUntilDate == 0 then week lastDateOfLastYear else nbrMondaysUpUntilDate
