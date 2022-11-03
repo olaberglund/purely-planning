@@ -11,6 +11,12 @@
   , "now"
   , "prelude"
   , "psci-support"
+  , "aff"
+  , "dom-indexed"
+  , "either"
+  , "integers"
+  , "strings"
+  , "typelevel-prelude"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]

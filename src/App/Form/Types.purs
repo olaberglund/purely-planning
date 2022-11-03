@@ -8,20 +8,24 @@ data Time = Time Date.Hour Date.Minute
 
 derive instance eqTime ∷ Eq Time
 
-type Hours = { from ∷ Time, to ∷ Time }
+newtype Hours = Hours { from ∷ Time, to ∷ Time }
 
 hours ∷ Time → Time → Hours
-hours t1 t2 = { from: t1, to: t2 }
+hours t1 t2 = Hours { from: t1, to: t2 }
 
 newtype Shift = Shift { label ∷ String, hours ∷ Hours }
 
 shift ∷ String → Hours → Shift
 shift s h = Shift { label: s, hours: h }
 
-derive newtype instance eqShift ∷ Eq Shift
+instance eqShift ∷ Eq Shift where
+  eq (Shift s1) (Shift s2) = eq s1.label s2.label
 
 instance Show Time where
   show (Time h m) = show h <> ":" <> show m
 
+instance Show Hours where
+  show (Hours { from, to }) = show from <> "to" <> show to
+
 instance Show Shift where
-  show (Shift { label }) = show label
+  show (Shift { label, hours }) = show label <> show hours

@@ -5,11 +5,15 @@ import Prelude
 import Data.Array (cons, delete, elem, filter, length, mapWithIndex, replicate, singleton, splitAt)
 import Data.Date (Date, Month(..), Weekday(..), month, weekday, year)
 import Data.Date as Date
+import Data.DateTime (DateTime(..), date)
+import Data.DateTime as Time
 import Data.Enum (enumFromTo, fromEnum, pred, succ)
 import Data.Maybe (Maybe(..), fromMaybe)
+import FormParent (formParent)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
+import Type.Proxy (Proxy(..))
 
 type Matrix a = Array (Array a)
 
@@ -18,11 +22,11 @@ data Padded a = Padding | Data a
 weekdays ∷ Array Date.Weekday
 weekdays = [ Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday ]
 
-type Input = Date
+type Input = DateTime
 
 data Action = Next | Previous | Pick Date
 
-type State = { picks ∷ Array Date, currentDate ∷ Date }
+type State = { picks ∷ Array Date, currentDate ∷ Date, time ∷ Time.Time }
 
 type Output = Array Date
 
@@ -35,7 +39,7 @@ component =
     }
 
 initialState ∷ Input → State
-initialState input = { picks: [], currentDate: input }
+initialState input = { picks: [], currentDate: (date input), time: (Time.time input) }
 
 render ∷ ∀ m. State → H.ComponentHTML Action () m
 render state =
@@ -52,6 +56,7 @@ render state =
     , HH.table_
         [ tableBody ]
     , HH.p_ (mkText state.picks)
+    -- , HH.slot (Proxy ∷ Proxy "inner") unit formParent (state.time) ()
     ]
   where
   tableBody ∷ ∀ w. HH.HTML w Action

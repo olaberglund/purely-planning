@@ -15,29 +15,23 @@ import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
-import Types (Shift, Time(..))
-import UI (radioGroup)
+import Types (Time(..))
 
 data Action
   = Receive FormContext
   | Eval FormlessAction
 
-type Input = { radioOptions ∷ Array (Maybe Shift) }
-
-type Picked = Maybe Shift
-
-type FormContext = F.FormContext (Form F.FieldState) (Form (F.FieldAction Action)) Input Action
+type FormContext = F.FormContext (Form F.FieldState) (Form (F.FieldAction Action)) Unit Action
 type FormlessAction = F.FormlessAction (Form F.FieldState)
 
 type Form ∷ (Type → Type → Type → Type) → Row Type
 type Form f =
-  ( picked ∷ f Picked Void Picked
-  , from ∷ f String String Time
+  ( from ∷ f String String Time
   , to ∷ f String String Time
   , label ∷ f String String String
   )
 
-form ∷ ∀ q. H.Component q Input { | Form F.FieldOutput } Aff
+form ∷ ∀ q. H.Component q Unit { | Form F.FieldOutput } Aff
 form = F.formless { liftAction: Eval } initialForm hComponent
   where
 
@@ -55,8 +49,7 @@ form = F.formless { liftAction: Eval } initialForm hComponent
 
   initialForm ∷ { | Form F.FieldInput }
   initialForm =
-    { picked: Nothing
-    , from: ""
+    { from: ""
     , to: ""
     , label: ""
     }
@@ -81,8 +74,7 @@ form = F.formless { liftAction: Eval } initialForm hComponent
 
         validation ∷ { | Form F.FieldValidation }
         validation =
-          { picked: Right
-          , to: validateTime
+          { to: validateTime
           , from: validateTime
           , label: case _ of
               "" → Left "Required"
@@ -92,17 +84,11 @@ form = F.formless { liftAction: Eval } initialForm hComponent
       F.handleSubmitValidate F.raise F.validate validation
 
   render ∷ FormContext → H.ComponentHTML Action () Aff
-  render { formActions, fields, actions, input } =
+  render { formActions, actions } =
     HH.form
       [ HE.onSubmit formActions.handleSubmit ]
       [ HH.div_
-          [ radioGroup
-              { label: "Pick a shift"
-              , options: input.radioOptions <#> \option → { option, render: show option, props: [] }
-              , state: fields.picked
-              , action: actions.picked
-              }
-          , HH.input
+          [ HH.input
               [ HP.type_ HP.InputTime
               , HE.onValueInput actions.to.handleChange
               , HE.onBlur actions.to.handleBlur
@@ -120,13 +106,13 @@ form = F.formless { liftAction: Eval } initialForm hComponent
           ]
       , HH.button
           [ HP.type_ HP.ButtonSubmit ]
-          [ HH.text "Submit" ]
+          [ HH.text "Add" ]
       ]
 
   handleAction ∷ Action → H.HalogenM _ _ _ _ _ Unit
   handleAction = case _ of
     -- When we receive new form context we need to update our form state.
-    Receive context →
+    Receive context → do
       H.put context
 
     -- When a `FormlessAction` has been triggered we must raise it up to
