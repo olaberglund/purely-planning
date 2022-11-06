@@ -1,4 +1,4 @@
-module FormParent where
+module Form where
 
 import Prelude
 
@@ -6,28 +6,32 @@ import Data.Array (cons, nubEq)
 import Data.DateTime as Date
 import Data.Maybe (Maybe(..))
 import Effect.Aff (Aff)
-import FormChild as FC
+import FormInputs as FI
 import Formless as F
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
 import Type.Prelude (Proxy(..))
-import Types (Shift(..), hours, shift)
+import Types (Shift(..), mkHours, mkShift)
 
-type Options = Array (Maybe Shift)
+type Option = Maybe Shift
 
-data Action = HandleForm State { | FC.Form F.FieldOutput } | ChangeOption (Maybe Shift)
+type Options = Array Option
+
+data Action = HandleForm State { | FI.Form F.FieldOutput } | ChangeOption Option
+
+type Output = Option
 
 type Input = Date.Time
 
-type State = { options ∷ Options, result ∷ Maybe Shift, picked ∷ Maybe Shift }
+type State = { options ∷ Options, result ∷ Option, picked ∷ Option }
 
 initialState ∷ Input → State
 initialState _ = { options: [], result: Nothing, picked: Nothing }
 
-formParent ∷ ∀ q o. H.Component q Input o Aff
-formParent = H.mkComponent
+form ∷ ∀ q. H.Component q Input Output Aff
+form = H.mkComponent
   { initialState: initialState
   , render
   , eval: H.mkEval $ H.defaultEval { handleAction = handleAction }
@@ -36,11 +40,11 @@ formParent = H.mkComponent
   handleAction = case _ of
     HandleForm state result →
       H.modify_ _
-        { options = nubEq $ cons (Just (shift result.label (hours result.from result.to))) state.options }
+        { options = nubEq $ cons (Just (mkShift result.label (mkHours result.from result.to))) state.options }
 
-    ChangeOption option →
-      H.modify_ _
-        { picked = option }
+    ChangeOption option → do
+      H.modify_ _ { picked = option }
+      H.raise option
 
   renderOption ∷ Maybe Shift → String
   renderOption op = case op of
@@ -49,17 +53,9 @@ formParent = H.mkComponent
 
   render state =
     HH.article_
-      ( [ HH.h1_ [ HH.text "Form" ]
-        , HH.p_ [ HH.text "this is a form with dynamic options" ]
-        , case state.result of
-            Just s → HH.p_ [ HH.text $ "You've picked: " <> show s ]
-            Nothing → HH.p_ [ HH.text "Please create a shift!" ]
-        , HH.slot (Proxy ∷ Proxy "inner") unit FC.form unit (HandleForm state)
-        , HH.div_ $ map (HH.text <<< show) state.options
-        , HH.text $ "You have picked: " <> (show state.picked)
+      ( [ HH.slot (Proxy ∷ Proxy "inner") unit FI.form unit (HandleForm state)
         , HH.form_
-            [ HH.label_ [ HH.text "Pick a shift" ]
-            , HH.fieldset_
+            [ HH.fieldset_
                 ( state.options <#> \option →
                     HH.label_
                       [ HH.input

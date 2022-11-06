@@ -1,4 +1,4 @@
-module FormChild where
+module FormInputs where
 
 import Prelude
 

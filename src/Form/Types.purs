@@ -6,17 +6,22 @@ import Data.DateTime as Date
 
 data Time = Time Date.Hour Date.Minute
 
+derive instance ordTime ∷ Ord Time
+
 derive instance eqTime ∷ Eq Time
 
 newtype Hours = Hours { from ∷ Time, to ∷ Time }
 
-hours ∷ Time → Time → Hours
-hours t1 t2 = Hours { from: t1, to: t2 }
+derive instance ordHours ∷ Ord Hours
+derive instance eqHours ∷ Eq Hours
+
+mkHours ∷ Time → Time → Hours
+mkHours t1 t2 = Hours { from: t1, to: t2 }
 
 newtype Shift = Shift { label ∷ String, hours ∷ Hours }
 
-shift ∷ String → Hours → Shift
-shift s h = Shift { label: s, hours: h }
+mkShift ∷ String → Hours → Shift
+mkShift s h = Shift { label: s, hours: h }
 
 instance eqShift ∷ Eq Shift where
   eq (Shift s1) (Shift s2) = eq s1.label s2.label
@@ -25,7 +30,9 @@ instance Show Time where
   show (Time h m) = show h <> ":" <> show m
 
 instance Show Hours where
-  show (Hours { from, to }) = show from <> "to" <> show to
+  show (Hours { from, to }) = show from <> " - " <> show to
 
 instance Show Shift where
-  show (Shift { label, hours }) = show label <> show hours
+  show (Shift { label }) = label
+
+derive instance ordShift ∷ Ord Shift

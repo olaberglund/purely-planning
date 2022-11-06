@@ -1,13 +1,11 @@
 module Main where
 
-import Data.DateTime (time)
-import DayPicker (component)
 import Effect (Effect)
-import Effect.Now (nowDate, nowDateTime)
-import FormParent (formParent)
+import Effect.Now (nowDateTime)
 import Halogen.Aff as HA
 import Halogen.VDom.Driver (runUI)
 import Prelude (Unit, bind)
+import Scheduler (component)
 
 main ∷ Effect Unit
 main = do

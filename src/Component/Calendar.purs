@@ -1,19 +1,17 @@
-module DayPicker where
+module Calendar where
 
 import Prelude
 
-import Data.Array (cons, delete, elem, filter, length, mapWithIndex, replicate, singleton, splitAt)
+import Data.Array (cons, filter, last, length, mapMaybe, mapWithIndex, replicate, singleton, splitAt)
 import Data.Date (Date, Month(..), Weekday(..), month, weekday, year)
 import Data.Date as Date
-import Data.DateTime (DateTime(..), date)
+import Data.DateTime (DateTime, date)
 import Data.DateTime as Time
 import Data.Enum (enumFromTo, fromEnum, pred, succ)
 import Data.Maybe (Maybe(..), fromMaybe)
-import FormParent (formParent)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
-import Type.Proxy (Proxy(..))
 
 type Matrix a = Array (Array a)
 
@@ -26,12 +24,14 @@ type Input = DateTime
 
 data Action = Next | Previous | Pick Date
 
-type State = { picks ∷ Array Date, currentDate ∷ Date, time ∷ Time.Time }
+type State = { currentDate ∷ Date, time ∷ Time.Time }
 
-type Output = Array Date
+type Output = Date
 
-component ∷ ∀ q m. H.Component q Input Output m
-component =
+-- type Slots = (formParent ∷ ∀ q. slot q FP.Output)
+
+calendar ∷ ∀ q m. H.Component q Input Output m
+calendar =
   H.mkComponent
     { initialState
     , render
@@ -39,13 +39,12 @@ component =
     }
 
 initialState ∷ Input → State
-initialState input = { picks: [], currentDate: (date input), time: (Time.time input) }
+initialState input = { currentDate: (date input), time: (Time.time input) }
 
 render ∷ ∀ m. State → H.ComponentHTML Action () m
 render state =
   HH.section_
-    [ HH.h1_ (mkText $ year (_.currentDate state))
-    , HH.div_
+    [ HH.div_
         [ HH.button
             [ HE.onClick \_ → Previous ]
             [ HH.text "Previous" ]
@@ -55,8 +54,6 @@ render state =
         ]
     , HH.table_
         [ tableBody ]
-    , HH.p_ (mkText state.picks)
-    -- , HH.slot (Proxy ∷ Proxy "inner") unit formParent (state.time) ()
     ]
   where
   tableBody ∷ ∀ w. HH.HTML w Action
@@ -106,7 +103,9 @@ datesOfMonth ∷ Date → Array Date
 datesOfMonth date = enumFromTo (firstDateOfMonth date) (lastDateOfMonth date)
 
 lastDateOfMonth ∷ Date → Date
-lastDateOfMonth date = Date.canonicalDate (year date) (month date) top
+lastDateOfMonth date = fromMaybe date (last daysOfMonth)
+  where
+  daysOfMonth = mapMaybe (Date.exactDate (year date) (month date)) (enumFromTo bottom top)
 
 chunks ∷ ∀ a. Int → Array a → Matrix a
 chunks _ [] = []
@@ -142,9 +141,7 @@ handleAction = case _ of
   Previous → do
     H.modify_ \s → s { currentDate = prevMonth s.currentDate }
   Pick d → do
-    H.modify_ \s → s { picks = if d `elem` s.picks then delete d s.picks else cons d s.picks }
-    picks ← H.gets _.picks
-    H.raise picks
+    H.raise d
 
 week ∷ Date → Int
 week d = if nbrMondaysUpUntilDate == 0 then week lastDateOfLastYear else nbrMondaysUpUntilDate
