@@ -9,16 +9,18 @@ import Data.DateTime (DateTime, date)
 import Data.DateTime as Time
 import Data.Enum (enumFromTo, fromEnum, pred, succ)
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.String (take)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
+import Utils (css)
 
 type Matrix a = Array (Array a)
 
 data Padded a = Padding | Data a
 
 weekdays ∷ Array Date.Weekday
-weekdays = [ Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday ]
+weekdays = enumFromTo bottom top
 
 type Input = DateTime
 
@@ -43,24 +45,26 @@ initialState input = { currentDate: (date input), time: (Time.time input) }
 
 render ∷ ∀ m. State → H.ComponentHTML Action () m
 render state =
-  HH.section_
-    [ HH.div_
+  HH.section [ css "calendar-container" ]
+    [ HH.div [ css "controls-wrapper" ]
         [ HH.button
-            [ HE.onClick \_ → Previous ]
-            [ HH.text "Previous" ]
+            [ css "button", HE.onClick \_ → Previous ]
+            [ HH.text "<" ]
+        , HH.span [ css "calendar__title" ] [ HH.text $ show (Date.month state.currentDate) <> " " <> show (fromEnum $ Date.year state.currentDate) ]
         , HH.button
-            [ HE.onClick \_ → Next ]
-            [ HH.text "Next" ]
+            [ css "button", HE.onClick \_ → Next ]
+            [ HH.text ">" ]
         ]
-    , HH.table_
-        [ tableBody ]
+    , HH.table [ css "calendar" ] [ tableBody ]
     ]
   where
   tableBody ∷ ∀ w. HH.HTML w Action
-  tableBody = HH.tbody_ (map HH.tr_ (cons tableHeads (dayMatrix (_.currentDate state))))
+  tableBody = HH.tbody [ css "calendar__body" ] (map (HH.tr [ css "calendar__row" ]) (cons tableHeads (dayMatrix (_.currentDate state))))
 
 tableHeads ∷ ∀ w. Array (HH.HTML w Action)
-tableHeads = cons (HH.th_ []) $ map (HH.th_ <<< mkText) weekdays
+tableHeads = cons (th []) $ map (th <<< singleton <<< HH.text) (map (take 3 <<< show) weekdays)
+  where
+  th = HH.th [ css "calendar__head" ]
 
 dataRow ∷ ∀ w. Date → Array (HH.HTML w Action)
 dataRow = datesOfMonth >=> Data >>> dataCell >>> pure
@@ -68,8 +72,8 @@ dataRow = datesOfMonth >=> Data >>> dataCell >>> pure
 dataCell ∷ ∀ w. Padded Date → HH.HTML w Action
 dataCell m =
   case m of
-    Data d → HH.td [ HE.onClick \_ → Pick d ] $ mkText (Date.day d)
-    Padding → HH.td_ []
+    Data d → HH.td [ css "calendar__day", HE.onClick \_ → Pick d ] $ mkText (fromEnum $ Date.day d)
+    Padding → HH.td [ css "calendar__day--empty" ] []
 
 dayMatrix ∷ ∀ w. Date → Matrix (HH.HTML w Action)
 dayMatrix date = mapWithIndex addWeek (chunks (length weekdays) (paddedDays))
@@ -85,7 +89,7 @@ dayMatrix date = mapWithIndex addWeek (chunks (length weekdays) (paddedDays))
   currentBaseWeek = week (firstDateOfMonth date)
 
   addWeekHeader ∷ Int → Array (HH.HTML w Action) → Array (HH.HTML w Action)
-  addWeekHeader w = cons (HH.th_ [ HH.text $ show w ])
+  addWeekHeader w = cons (HH.th [ css "calendar__head" ] [ HH.text $ show w ])
 
   paddedDays ∷ Array (HH.HTML w Action)
   paddedDays = insertMany (fromEnum (firstWeekDay date) - 1) paddedCell (dataRow date)

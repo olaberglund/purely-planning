@@ -1,0 +1,48 @@
+.calendar-container {
+  width:min-content;
+}
+
+.calendar {
+  border-collapse: collapse;
+  width: max-content;
+}
+
+.calendar__day {
+  width: 3rem;
+  height: 3rem;
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.8rem;
+}
+
+.calendar__day--empty{
+  border: 0px solid;
+}
+
+.calendar__day:hover {
+  background-color: lightblue;
+  cursor: pointer;
+}
+
+.calendar__day:nth-child(n + 7) {
+  color: red;
+}
+
+.calendar__head {
+  width: 3rem;
+  height: 3rem;
+  text-align: left;
+}
+
+.controls-wrapper {
+  display: flex;
+  justify-content: space-between;
+}
+
+.calendar__title {
+  text-align: center;
+}
+
+.button:hover {
+  cursor: pointer;
+}
