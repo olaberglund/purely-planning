@@ -1,22 +1,54 @@
-.calendar-container {
+
+html, body {
+  margin: 0;
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: SvenskForm-Regular;
+}
+
+.app {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  justify-content: center;
+}
+
+
+.calendar {
   width:min-content;
 }
 
-.calendar {
+.calendar-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-body {
   border-collapse: collapse;
-  width: max-content;
+  width: 100%;
+  height: 100%;
+}
+
+.calendar-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
 }
 
 .calendar__day {
-  width: 3rem;
-  height: 3rem;
+  border: 1px solid lightgray;
   text-align: left;
   vertical-align: top;
   font-size: 0.8rem;
 }
 
 .calendar__day--empty{
-  border: 0px solid;
+  border: none;
 }
 
 .calendar__day:hover {
@@ -24,25 +56,59 @@
   cursor: pointer;
 }
 
-.calendar__day:nth-child(n + 7) {
+.calendar__head:nth-child(n + 7) {
   color: red;
 }
 
 .calendar__head {
   width: 3rem;
   height: 3rem;
-  text-align: left;
-}
-
-.controls-wrapper {
-  display: flex;
-  justify-content: space-between;
-}
-
-.calendar__title {
   text-align: center;
+}
+
+.calendar__controls {
+  display: flex;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.calendar__r {
+  width: 100%;
+}
+
+
+.button {
+  padding: 0 2em;
+  height: 2em;
 }
 
 .button:hover {
   cursor: pointer;
+}
+
+@font-face {
+  font-family: 'SvenskForm-Regular';
+  src: local('SvenskForm-Regular'), url(./SvenskForm-Regular.otf) format('opentype');
+}
+
+.shift-form {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+}
+
+.fields {
+  border: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.radio__button:hover {
+  cursor: pointer;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }

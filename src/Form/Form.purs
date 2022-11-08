@@ -14,6 +14,7 @@ import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
 import Type.Prelude (Proxy(..))
 import Types (Shift(..), mkHours, mkShift)
+import Utils (css)
 
 type Option = Maybe Shift
 
@@ -52,10 +53,10 @@ form = H.mkComponent
     Nothing → ""
 
   render state =
-    HH.article_
+    HH.section [ css "shift-form" ]
       ( [ HH.slot (Proxy ∷ Proxy "inner") unit FI.form unit (HandleForm state)
-        , HH.form_
-            [ HH.fieldset_
+        , HH.section [ css "shifts" ]
+            [ HH.fieldset [ css "fields" ]
                 ( state.options <#> \option →
                     HH.label_
                       [ HH.input
@@ -63,6 +64,7 @@ form = H.mkComponent
                           , HP.name "radio"
                           , HP.checked (state.picked == option)
                           , HE.onChange (\_ → ChangeOption option)
+                          , css "radio__button"
                           ]
                       , HH.text $ renderOption option
                       ]

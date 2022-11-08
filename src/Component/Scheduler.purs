@@ -14,6 +14,7 @@ import Halogen.HTML as HH
 import Halogen.HTML.Events (onClick)
 import Type.Prelude (Proxy(..))
 import Types (Shift)
+import Utils (css)
 
 data Workday = Workday Shift Date
 
@@ -51,10 +52,12 @@ component =
 
 render ∷ State → H.ComponentHTML Action Slots Aff
 render state =
-  HH.div_
-    [ HH.slot (Proxy ∷ Proxy "form") unit F.form (time state.datetime) HandlePicked
-    , HH.slot (Proxy ∷ Proxy "calendar") unit C.calendar (state.datetime) HandleDate
-    , HH.button [ onClick (\_ → Reset) ] [ HH.text "Reset" ]
+  HH.div [ css "app" ]
+    [ HH.div [ css "calendar-container" ]
+        [ HH.slot (Proxy ∷ Proxy "calendar") unit C.calendar (state.datetime) HandleDate
+        -- , HH.button [ onClick (\_ → Reset), css "button" ] [ HH.text "Reset" ]
+        ]
+    -- , HH.slot (Proxy ∷ Proxy "form") unit F.form (time state.datetime) HandlePicked
     , HH.text $ show $ (Set.toUnfoldable state.workdays ∷ Array Workday)
     ]
 

@@ -16,6 +16,7 @@ import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
 import Types (Time(..))
+import Utils (css)
 
 data Action
   = Receive FormContext
@@ -86,26 +87,32 @@ form = F.formless { liftAction: Eval } initialForm hComponent
   render ∷ FormContext → H.ComponentHTML Action () Aff
   render { formActions, actions } =
     HH.form
-      [ HE.onSubmit formActions.handleSubmit ]
-      [ HH.div_
-          [ HH.input
+      [ HE.onSubmit formActions.handleSubmit, css "form" ]
+      [ HH.fieldset [ css "fields" ]
+          [ HH.label [ HP.for "from" ] [ HH.text "From" ]
+          , HH.input
               [ HP.type_ HP.InputTime
               , HE.onValueInput actions.to.handleChange
               , HE.onBlur actions.to.handleBlur
+              , HP.name "from"
               ]
+          , HH.label [ HP.for "to" ] [ HH.text "To" ]
           , HH.input
               [ HP.type_ HP.InputTime
               , HE.onValueInput actions.from.handleChange
               , HE.onBlur actions.from.handleBlur
+              , HP.name "to"
               ]
+          , HH.label [ HP.for "label" ] [ HH.text "Label" ]
           , HH.input
               [ HP.type_ HP.InputText
               , HE.onValueInput actions.label.handleChange
               , HE.onBlur actions.label.handleBlur
+              , HP.name "label"
               ]
           ]
       , HH.button
-          [ HP.type_ HP.ButtonSubmit ]
+          [ css "button", HP.type_ HP.ButtonSubmit ]
           [ HH.text "Add" ]
       ]
 

@@ -13,6 +13,7 @@ import Data.String (take)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
+import Halogen.HTML.Properties as HP
 import Utils (css)
 
 type Matrix a = Array (Array a)
@@ -45,21 +46,26 @@ initialState input = { currentDate: (date input), time: (Time.time input) }
 
 render ∷ ∀ m. State → H.ComponentHTML Action () m
 render state =
-  HH.section [ css "calendar-container" ]
-    [ HH.div [ css "controls-wrapper" ]
+  HH.section [ css "calendar-wrapper" ]
+    [ HH.table [ css "calendar-body" ]
+        [ HH.caption [ css "calendar__caption" ]
+            [ HH.text $ show (Date.month state.currentDate) <> " " <> show (fromEnum $ Date.year state.currentDate)
+            ]
+        , HH.thead [ css "calendar__thead" ] tableHeads
+        , tableBody
+        ]
+    , HH.div [ css "calendar__controls" ]
         [ HH.button
             [ css "button", HE.onClick \_ → Previous ]
             [ HH.text "<" ]
-        , HH.span [ css "calendar__title" ] [ HH.text $ show (Date.month state.currentDate) <> " " <> show (fromEnum $ Date.year state.currentDate) ]
         , HH.button
             [ css "button", HE.onClick \_ → Next ]
             [ HH.text ">" ]
         ]
-    , HH.table [ css "calendar" ] [ tableBody ]
     ]
   where
   tableBody ∷ ∀ w. HH.HTML w Action
-  tableBody = HH.tbody [ css "calendar__body" ] (map (HH.tr [ css "calendar__row" ]) (cons tableHeads (dayMatrix (_.currentDate state))))
+  tableBody = HH.tbody [ css "calendar__body" ] (map (HH.tr [ css "calendar__row" ]) (dayMatrix (_.currentDate state)))
 
 tableHeads ∷ ∀ w. Array (HH.HTML w Action)
 tableHeads = cons (th []) $ map (th <<< singleton <<< HH.text) (map (take 3 <<< show) weekdays)
@@ -83,16 +89,24 @@ dayMatrix date = mapWithIndex addWeek (chunks (length weekdays) (paddedDays))
     -- gymnastics for the first month of the year
     -- when the first days aren't actually part of 
     -- the first year (but the last of the previous year)
-    if currentBaseWeek > 51 then addWeekHeader (max ((currentBaseWeek + i) `mod` (currentBaseWeek + 1)) i)
-    else addWeekHeader (currentBaseWeek + i)
+    if currentBaseWeek > 51 then
+      addWeekHeader (isOutside i) (max ((currentBaseWeek + i) `mod` (currentBaseWeek + 1)) i)
+    else
+      addWeekHeader (isOutside i) (currentBaseWeek + i)
 
   currentBaseWeek = week (firstDateOfMonth date)
 
-  addWeekHeader ∷ Int → Array (HH.HTML w Action) → Array (HH.HTML w Action)
-  addWeekHeader w = cons (HH.th [ css "calendar__head" ] [ HH.text $ show w ])
+  isOutside ∷ Int → Boolean
+  isOutside i = i * (length weekdays) < length start
+
+  addWeekHeader ∷ Boolean → Int → Array (HH.HTML w Action) → Array (HH.HTML w Action)
+  addWeekHeader b w = cons (HH.th [ css "calendar__head" ] [ HH.text $ if b then show w else "" ])
 
   paddedDays ∷ Array (HH.HTML w Action)
-  paddedDays = insertMany (fromEnum (firstWeekDay date) - 1) paddedCell (dataRow date)
+  paddedDays = start <> replicate (42 - length start) paddedCell
+
+  start ∷ Array (HH.HTML w Action)
+  start = insertMany (fromEnum (firstWeekDay date) - 1) paddedCell (dataRow date)
 
   paddedCell ∷ HH.HTML w Action
   paddedCell = (dataCell (Padding ∷ Padded Date))
@@ -109,6 +123,8 @@ datesOfMonth date = enumFromTo (firstDateOfMonth date) (lastDateOfMonth date)
 lastDateOfMonth ∷ Date → Date
 lastDateOfMonth date = fromMaybe date (last daysOfMonth)
   where
+  -- map an array of all days [1, 31] to an exact date, if there is one,
+  -- and keep only the successful dates
   daysOfMonth = mapMaybe (Date.exactDate (year date) (month date)) (enumFromTo bottom top)
 
 chunks ∷ ∀ a. Int → Array a → Matrix a
