@@ -3,8 +3,7 @@ module Scheduler where
 import Prelude
 
 import Calendar as C
-import Data.Date (Date)
-import Data.DateTime (time)
+import Data.DateTime (DateTime, time)
 import Data.Maybe (Maybe(..))
 import Data.Set as Set
 import Effect.Aff (Aff)
@@ -13,26 +12,18 @@ import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events (onClick)
 import Type.Prelude (Proxy(..))
-import Types (Shift)
+import Types (Workday(..))
 import Utils (css)
-
-data Workday = Workday Shift Date
 
 type State =
   { currentlyPicked ∷ F.Option
   , workdays ∷ Set.Set Workday
-  , datetime ∷ C.Input
+  , datetime ∷ DateTime
   }
-
-instance Show Workday where
-  show (Workday s d) = show s <> ", " <> show d
-
-derive instance ordWorkday ∷ Ord Workday
-derive instance eqWorkday ∷ Eq Workday
 
 data Action = HandlePicked F.Output | HandleDate C.Output | Reset
 
-type Input = C.Input
+type Input = DateTime
 
 type Slots =
   ( calendar ∷ ∀ q. H.Slot q C.Output Unit
@@ -54,11 +45,10 @@ render ∷ State → H.ComponentHTML Action Slots Aff
 render state =
   HH.div [ css "app" ]
     [ HH.div [ css "calendar-container" ]
-        [ HH.slot (Proxy ∷ Proxy "calendar") unit C.calendar (state.datetime) HandleDate
-        -- , HH.button [ onClick (\_ → Reset), css "button" ] [ HH.text "Reset" ]
+        [ HH.slot (Proxy ∷ Proxy "calendar") unit C.calendar { now: state.datetime, workdays: state.workdays } HandleDate
+        , HH.button [ onClick (\_ → Reset), css "button" ] [ HH.text "Reset" ]
         ]
-    -- , HH.slot (Proxy ∷ Proxy "form") unit F.form (time state.datetime) HandlePicked
-    , HH.text $ show $ (Set.toUnfoldable state.workdays ∷ Array Workday)
+    , HH.slot (Proxy ∷ Proxy "form") unit F.form (time state.datetime) HandlePicked
     ]
 
 handleAction ∷ ∀ cs o m. Action → H.HalogenM State Action cs o m Unit

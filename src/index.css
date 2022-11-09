@@ -37,7 +37,6 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  width: 100%;
 }
 
 .calendar__day {
@@ -49,6 +48,10 @@ body {
 
 .calendar__day--empty{
   border: none;
+}
+
+.--picked {
+/* TODO: design */
 }
 
 .calendar__day:hover {

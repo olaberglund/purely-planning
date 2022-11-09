@@ -2,6 +2,7 @@ module Types where
 
 import Prelude
 
+import Data.Date (Date)
 import Data.DateTime as Date
 
 data Time = Time Date.Hour Date.Minute
@@ -36,3 +37,11 @@ instance Show Shift where
   show (Shift { label }) = label
 
 derive instance ordShift ∷ Ord Shift
+
+data Workday = Workday Shift Date
+
+derive instance ordWorkday ∷ Ord Workday
+derive instance eqWorkday ∷ Eq Workday
+
+instance Show Workday where
+  show (Workday s d) = show s <> ", " <> show d

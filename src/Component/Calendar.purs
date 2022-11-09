@@ -8,12 +8,15 @@ import Data.Date as Date
 import Data.DateTime (DateTime, date)
 import Data.DateTime as Time
 import Data.Enum (enumFromTo, fromEnum, pred, succ)
+import Data.Map.Internal as Map
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Set as Set
 import Data.String (take)
+import Data.Tuple (Tuple(..))
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
-import Halogen.HTML.Properties as HP
+import Types (Shift, Workday(..))
 import Utils (css)
 
 type Matrix a = Array (Array a)
@@ -23,26 +26,33 @@ data Padded a = Padding | Data a
 weekdays ∷ Array Date.Weekday
 weekdays = enumFromTo bottom top
 
-type Input = DateTime
+type Workdays = Map.Map Date Shift
 
-data Action = Next | Previous | Pick Date
+type Input = { workdays ∷ Set.Set Workday, now ∷ DateTime }
 
-type State = { currentDate ∷ Date, time ∷ Time.Time }
+data Action = Next | Previous | Pick Date | Receive Input
+
+type State = { currentDate ∷ Date, time ∷ Time.Time, workdays ∷ Workdays }
 
 type Output = Date
 
--- type Slots = (formParent ∷ ∀ q. slot q FP.Output)
-
-calendar ∷ ∀ q m. H.Component q Input Output m
+calendar ∷ ∀ m q. H.Component q Input Output m
 calendar =
   H.mkComponent
     { initialState
     , render
-    , eval: H.mkEval H.defaultEval { handleAction = handleAction }
+    , eval: H.mkEval H.defaultEval
+        { handleAction = handleAction
+        , receive = Just <<< Receive
+        }
     }
 
 initialState ∷ Input → State
-initialState input = { currentDate: (date input), time: (Time.time input) }
+initialState input =
+  { currentDate: (date input.now)
+  , time: (Time.time input.now)
+  , workdays: Map.empty
+  }
 
 render ∷ ∀ m. State → H.ComponentHTML Action () m
 render state =
@@ -65,24 +75,37 @@ render state =
     ]
   where
   tableBody ∷ ∀ w. HH.HTML w Action
-  tableBody = HH.tbody [ css "calendar__body" ] (map (HH.tr [ css "calendar__row" ]) (dayMatrix (_.currentDate state)))
+  tableBody = HH.tbody [ css "calendar__body" ] (map (HH.tr [ css "calendar__row" ]) (dayMatrix state.currentDate state.workdays))
 
 tableHeads ∷ ∀ w. Array (HH.HTML w Action)
 tableHeads = cons (th []) $ map (th <<< singleton <<< HH.text) (map (take 3 <<< show) weekdays)
   where
   th = HH.th [ css "calendar__head" ]
 
-dataRow ∷ ∀ w. Date → Array (HH.HTML w Action)
-dataRow = datesOfMonth >=> Data >>> dataCell >>> pure
+dataRow ∷ ∀ w. Date → Workdays → Array (HH.HTML w Action)
+dataRow d ws = datesOfMonth d >>= Data >>> dataCell ws >>> pure
 
-dataCell ∷ ∀ w. Padded Date → HH.HTML w Action
-dataCell m =
-  case m of
-    Data d → HH.td [ css "calendar__day", HE.onClick \_ → Pick d ] $ mkText (fromEnum $ Date.day d)
+dataCell ∷ ∀ w. Workdays → Padded Date → HH.HTML w Action
+dataCell ws pd =
+  case pd of
+    Data d →
+      if Map.member d ws then
+        pickedCell d
+      else
+        cell d
+
     Padding → HH.td [ css "calendar__day--empty" ] []
+  where
+  pickedCell ∷ Date → HH.HTML w Action
+  pickedCell d = HH.td [ css "calendar__day --picked", HE.onClick \_ → Pick d ] $ mkText (fromEnum $ Date.day d)
 
-dayMatrix ∷ ∀ w. Date → Matrix (HH.HTML w Action)
-dayMatrix date = mapWithIndex addWeek (chunks (length weekdays) (paddedDays))
+  -- TODO: change text depending on if picked or not
+
+  cell ∷ Date → HH.HTML w Action
+  cell d = HH.td [ css "calendar__day", HE.onClick \_ → Pick d ] $ mkText (fromEnum $ Date.day d)
+
+dayMatrix ∷ ∀ w. Date → Workdays → Matrix (HH.HTML w Action)
+dayMatrix date ws = mapWithIndex addWeek (chunks (length weekdays) paddedDays)
   where
   addWeek ∷ Int → Array (HH.HTML w Action) → Array (HH.HTML w Action)
   addWeek i =
@@ -106,10 +129,10 @@ dayMatrix date = mapWithIndex addWeek (chunks (length weekdays) (paddedDays))
   paddedDays = start <> replicate (42 - length start) paddedCell
 
   start ∷ Array (HH.HTML w Action)
-  start = insertMany (fromEnum (firstWeekDay date) - 1) paddedCell (dataRow date)
+  start = insertMany (fromEnum (firstWeekDay date) - 1) paddedCell (dataRow date ws)
 
   paddedCell ∷ HH.HTML w Action
-  paddedCell = (dataCell (Padding ∷ Padded Date))
+  paddedCell = dataCell Map.empty (Padding ∷ Padded Date)
 
 insertMany ∷ ∀ a. Int → a → Array a → Array a
 insertMany n x xs = replicate n x <> xs
@@ -162,6 +185,8 @@ handleAction = case _ of
     H.modify_ \s → s { currentDate = prevMonth s.currentDate }
   Pick d → do
     H.raise d
+  Receive i → do
+    H.modify_ \s → s { workdays = Map.fromFoldable $ Set.map (\(Workday sh da) → Tuple da sh) i.workdays }
 
 week ∷ Date → Int
 week d = if nbrMondaysUpUntilDate == 0 then week lastDateOfLastYear else nbrMondaysUpUntilDate
