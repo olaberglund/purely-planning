@@ -2,21 +2,21 @@ module Calendar where
 
 import Prelude
 
-import Data.Array (cons, filter, last, length, mapMaybe, mapWithIndex, replicate, singleton, splitAt)
+import Data.Array (cons, filter, last, length, mapMaybe, mapWithIndex, replicate, singleton, splitAt, take)
 import Data.Date (Date, Month(..), Weekday(..), month, weekday, year)
 import Data.Date as Date
 import Data.DateTime (DateTime, date)
 import Data.DateTime as Time
 import Data.Enum (enumFromTo, fromEnum, pred, succ)
+import Data.Foldable (foldr)
 import Data.Map.Internal as Map
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Set as Set
-import Data.String (take)
-import Data.Tuple (Tuple(..))
+import Data.String as String
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
-import Types (Shift, Workday(..))
+import Types (Hours(..), Shift(..), Time(..), Workday(..))
 import Utils (css)
 
 type Matrix a = Array (Array a)
@@ -26,7 +26,7 @@ data Padded a = Padding | Data a
 weekdays ∷ Array Date.Weekday
 weekdays = enumFromTo bottom top
 
-type Workdays = Map.Map Date Shift
+type Workdays = Map.Map Date (Array Shift)
 
 type Input = { workdays ∷ Set.Set Workday, now ∷ DateTime }
 
@@ -56,7 +56,7 @@ initialState input =
 
 render ∷ ∀ m. State → H.ComponentHTML Action () m
 render state =
-  HH.section [ css "calendar-wrapper" ]
+  HH.section [ css "flex-c" ]
     [ HH.table [ css "calendar-body" ]
         [ HH.caption [ css "calendar__caption" ]
             [ HH.text $ show (Date.month state.currentDate) <> " " <> show (fromEnum $ Date.year state.currentDate)
@@ -78,7 +78,7 @@ render state =
   tableBody = HH.tbody [ css "calendar__body" ] (map (HH.tr [ css "calendar__row" ]) (dayMatrix state.currentDate state.workdays))
 
 tableHeads ∷ ∀ w. Array (HH.HTML w Action)
-tableHeads = cons (th []) $ map (th <<< singleton <<< HH.text) (map (take 3 <<< show) weekdays)
+tableHeads = cons (th []) $ map (th <<< singleton <<< HH.text) (map (String.take 3 <<< show) weekdays)
   where
   th = HH.th [ css "calendar__head" ]
 
@@ -89,20 +89,35 @@ dataCell ∷ ∀ w. Workdays → Padded Date → HH.HTML w Action
 dataCell ws pd =
   case pd of
     Data d →
-      if Map.member d ws then
-        pickedCell d
-      else
-        cell d
+      case (Map.lookup d ws) of
+        Just sh → pickedCell d sh
+
+        Nothing → cell d
 
     Padding → HH.td [ css "calendar__day--empty" ] []
-  where
-  pickedCell ∷ Date → HH.HTML w Action
-  pickedCell d = HH.td [ css "calendar__day --picked", HE.onClick \_ → Pick d ] $ mkText (fromEnum $ Date.day d)
 
-  -- TODO: change text depending on if picked or not
+  where
+  pickedCell ∷ Date → Array Shift → HH.HTML w Action
+  pickedCell d ss = HH.td [ css "calendar__day", HE.onClick \_ → Pick d ]
+    [ HH.div [ css "flex-c" ] $
+        [ HH.text $ show (fromEnum $ Date.day d) ] <>
+          ( ss <#>
+              \(Shift s) →
+                if spansTwoDays s.hours then
+                  HH.span [ css "calendar__day--picked--spans" ] [ HH.text (String.take 1 s.label) ]
+                else
+                  HH.span [ css "calendar__day--picked" ] [ HH.text (String.take 1 s.label) ]
+          )
+    ]
 
   cell ∷ Date → HH.HTML w Action
-  cell d = HH.td [ css "calendar__day", HE.onClick \_ → Pick d ] $ mkText (fromEnum $ Date.day d)
+  cell d = HH.td [ css "calendar__day", HE.onClick \_ → Pick d ]
+    [ HH.span_
+        [ HH.text $ show (fromEnum $ Date.day d) ]
+    ]
+
+  spansTwoDays ∷ Hours → Boolean
+  spansTwoDays (Hours { from: Time h1 _, to: Time h2 _ }) = fromEnum h2 < fromEnum h1
 
 dayMatrix ∷ ∀ w. Date → Workdays → Matrix (HH.HTML w Action)
 dayMatrix date ws = mapWithIndex addWeek (chunks (length weekdays) paddedDays)
@@ -186,7 +201,17 @@ handleAction = case _ of
   Pick d → do
     H.raise d
   Receive i → do
-    H.modify_ \s → s { workdays = Map.fromFoldable $ Set.map (\(Workday sh da) → Tuple da sh) i.workdays }
+    H.modify_ _
+      { workdays = foldr
+          ( \(Workday sh da) ws →
+              case Map.lookup da ws of
+                Just shs → Map.insert da (cons sh (take 1 shs)) ws
+
+                _ → Map.insert da [ sh ] ws
+          )
+          Map.empty
+          i.workdays
+      }
 
 week ∷ Date → Int
 week d = if nbrMondaysUpUntilDate == 0 then week lastDateOfLastYear else nbrMondaysUpUntilDate

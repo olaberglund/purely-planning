@@ -92,15 +92,15 @@ form = F.formless { liftAction: Eval } initialForm hComponent
           [ HH.label [ HP.for "from" ] [ HH.text "From" ]
           , HH.input
               [ HP.type_ HP.InputTime
-              , HE.onValueInput actions.to.handleChange
-              , HE.onBlur actions.to.handleBlur
+              , HE.onValueInput actions.from.handleChange
+              , HE.onBlur actions.from.handleBlur
               , HP.name "from"
               ]
           , HH.label [ HP.for "to" ] [ HH.text "To" ]
           , HH.input
               [ HP.type_ HP.InputTime
-              , HE.onValueInput actions.from.handleChange
-              , HE.onBlur actions.from.handleBlur
+              , HE.onValueInput actions.to.handleChange
+              , HE.onBlur actions.to.handleBlur
               , HP.name "to"
               ]
           , HH.label [ HP.for "label" ] [ HH.text "Label" ]
