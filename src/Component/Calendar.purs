@@ -2,21 +2,19 @@ module Calendar where
 
 import Prelude
 
-import Data.Array (cons, filter, last, length, mapMaybe, mapWithIndex, replicate, singleton, splitAt, take)
+import Data.Array (cons, filter, last, length, mapMaybe, mapWithIndex, replicate, singleton, splitAt)
 import Data.Date (Date, Month(..), Weekday(..), month, weekday, year)
 import Data.Date as Date
 import Data.DateTime (DateTime, date)
 import Data.DateTime as Time
 import Data.Enum (enumFromTo, fromEnum, pred, succ)
-import Data.Foldable (foldr)
 import Data.Map.Internal as Map
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Set as Set
 import Data.String as String
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
-import Types (Hours(..), Shift(..), Time(..), Workday(..))
+import Types (Hours(..), Shift(..), Time(..), Workdays, values)
 import Utils (css)
 
 type Matrix a = Array (Array a)
@@ -26,9 +24,7 @@ data Padded a = Padding | Data a
 weekdays ∷ Array Date.Weekday
 weekdays = enumFromTo bottom top
 
-type Workdays = Map.Map Date (Array Shift)
-
-type Input = { workdays ∷ Set.Set Workday, now ∷ DateTime }
+type Input = { workdays ∷ Workdays, now ∷ DateTime }
 
 data Action = Next | Previous | Pick Date | Receive Input
 
@@ -90,7 +86,7 @@ dataCell ws pd =
   case pd of
     Data d →
       case (Map.lookup d ws) of
-        Just sh → pickedCell d sh
+        Just sh → pickedCell d (values sh)
 
         Nothing → cell d
 
@@ -201,17 +197,7 @@ handleAction = case _ of
   Pick d → do
     H.raise d
   Receive i → do
-    H.modify_ _
-      { workdays = foldr
-          ( \(Workday sh da) ws →
-              case Map.lookup da ws of
-                Just shs → Map.insert da (cons sh (take 1 shs)) ws
-
-                _ → Map.insert da [ sh ] ws
-          )
-          Map.empty
-          i.workdays
-      }
+    H.modify_ _ { workdays = i.workdays }
 
 week ∷ Date → Int
 week d = if nbrMondaysUpUntilDate == 0 then week lastDateOfLastYear else nbrMondaysUpUntilDate
