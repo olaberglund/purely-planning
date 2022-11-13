@@ -3,6 +3,7 @@ module Scheduler where
 import Prelude
 
 import Calendar as C
+import Data.Array (delete, elem, take, (:))
 import Data.DateTime (DateTime, time)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -13,7 +14,6 @@ import Halogen.HTML as HH
 import Halogen.HTML.Events (onClick)
 import Type.Prelude (Proxy(..))
 import Types (Workdays)
-import Types as Q
 import Utils (css)
 
 type State =
@@ -64,7 +64,11 @@ handleAction = case _ of
     H.modify_ \s → case s.currentlyPicked of
       Just p → s
         { workdays = case Map.lookup date s.workdays of
-            Just shs → Map.insert date (Q.upd p shs) s.workdays
-            Nothing → Map.insert date (Q.QueueSet 2 [ p ]) s.workdays
+            Just shs →
+              if p `elem` shs then
+                Map.insert date (delete p shs) s.workdays
+              else
+                Map.insert date (take 2 $ p : shs) s.workdays
+            Nothing → Map.insert date [ p ] s.workdays
         }
       Nothing → s

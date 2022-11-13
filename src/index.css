@@ -51,13 +51,20 @@ body {
 }
 
 .calendar__day--picked{
+  position: relative;
   background-color: rgba(255, 0, 0, 0.3);
+  width: 50%;
+  left: 25%;
+  text-align: center;
+  border-radius: 10px;
 }
 .calendar__day--picked--spans{
+  text-align: center;
   position: relative;
-  left: 50%;
+  left: 75%;
+  border-radius: 10px;
   background-color: rgba(0, 0, 255, 0.5);
-  width: 100%;
+  width: 50%;
 }
 
 .calendar__day:hover {

@@ -14,7 +14,7 @@ import Data.String as String
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
-import Types (Hours(..), Shift(..), Time(..), Workdays, values)
+import Types (Hours(..), Shift(..), Time(..), Workdays)
 import Utils (css)
 
 type Matrix a = Array (Array a)
@@ -86,7 +86,7 @@ dataCell ws pd =
   case pd of
     Data d →
       case (Map.lookup d ws) of
-        Just sh → pickedCell d (values sh)
+        Just sh → pickedCell d sh
 
         Nothing → cell d
 
