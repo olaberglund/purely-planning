@@ -1,5 +1,5 @@
-
-html, body {
+html,
+body {
   margin: 0;
   height: 100%;
   width: 100%;
@@ -15,10 +15,15 @@ body {
   width: 100%;
   justify-content: center;
 }
-
+@media screen and (max-width: 768px) {
+  .app {
+    flex-direction: column;
+    align-items: center;
+  }
+}
 
 .calendar {
-  width:min-content;
+  width: min-content;
 }
 
 .flex-c {
@@ -46,11 +51,11 @@ body {
   font-size: 0.8rem;
 }
 
-.calendar__day--empty{
+.calendar__day--empty {
   border: none;
 }
 
-.calendar__day--picked{
+.calendar__day--picked {
   position: relative;
   background-color: rgba(255, 0, 0, 0.3);
   width: 50%;
@@ -58,7 +63,7 @@ body {
   text-align: center;
   border-radius: 10px;
 }
-.calendar__day--picked--spans{
+.calendar__day--picked--spans {
   text-align: center;
   position: relative;
   left: 75%;
@@ -92,7 +97,6 @@ body {
   width: 100%;
 }
 
-
 .button {
   padding: 0 2em;
   height: 2em;
@@ -103,8 +107,9 @@ body {
 }
 
 @font-face {
-  font-family: 'SvenskForm-Regular';
-  src: local('SvenskForm-Regular'), url(./SvenskForm-Regular.otf) format('opentype');
+  font-family: "SvenskForm-Regular";
+  src: local("SvenskForm-Regular"),
+    url(./SvenskForm-Regular.otf) format("opentype");
 }
 
 .shift-form {

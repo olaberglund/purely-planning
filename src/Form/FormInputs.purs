@@ -108,12 +108,12 @@ form = F.formless { liftAction: Eval } initialForm hComponent
               [ HP.type_ HP.InputText
               , HE.onValueInput actions.label.handleChange
               , HE.onBlur actions.label.handleBlur
-              , HP.name "label"
+              , HP.name "Märkning"
               ]
           ]
       , HH.button
           [ css "button", HP.type_ HP.ButtonSubmit ]
-          [ HH.text "Add" ]
+          [ HH.text "Lägg till" ]
       ]
 
   handleAction ∷ Action → H.HalogenM _ _ _ _ _ Unit
