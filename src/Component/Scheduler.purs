@@ -57,8 +57,8 @@ render state =
         [ HH.slot (Proxy ∷ Proxy "calendar") unit C.calendar { now: state.datetime, workdays: state.workdays } HandleDate ]
     , HH.slot (Proxy ∷ Proxy "form") unit F.form (time state.datetime) HandlePicked
     , HH.div [ css "buttons" ]
-        [ HH.button [ onClick (\_ → Reset), css "button" ] [ HH.text "Återställ" ]
-        , HH.button [ onClick (\_ → Export), css "button" ] [ HH.text "Exportera" ]
+        [ HH.button [ onClick (\_ → Reset), css "button" ] [ HH.text "Reset" ]
+        , HH.button [ onClick (\_ → Export), css "button" ] [ HH.text "Export" ]
         ]
     ]
 

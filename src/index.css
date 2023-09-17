@@ -2,7 +2,7 @@ html,
 body {
   margin: 0;
   height: 100%;
-  width: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -45,6 +45,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  margin-right: 10px;
   align-items: center;
   gap: 10px;
 }
@@ -142,6 +143,9 @@ body {
   border: none;
   display: flex;
   flex-direction: column;
+}
+.fields > * {
+  width: 100%;
 }
 
 .radio__button:hover {
