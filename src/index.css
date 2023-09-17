@@ -11,10 +11,13 @@ body {
 
 .app {
   display: flex;
+  flex-direction: column;
   height: 100%;
   width: 100%;
   justify-content: center;
+  gap: 20px;
 }
+
 @media screen and (max-width: 768px) {
   .app {
     flex-direction: column;
@@ -43,6 +46,7 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 10px;
 }
 
 .calendar__day {
@@ -90,7 +94,7 @@ body {
 .calendar__controls {
   display: flex;
   width: 100%;
-  justify-content: flex-end;
+  justify-content: center;
 }
 
 .calendar__r {
@@ -112,10 +116,26 @@ body {
     url(./SvenskForm-Regular.otf) format("opentype");
 }
 
+.buttons {
+  display: flex;
+  margin-top: 20px;
+  justify-content: center;
+  gap: 20px;
+}
+
 .shift-form {
   display: flex;
-  flex-direction: row-reverse;
+  width: 100%;
+  justify-content: center;
   align-items: center;
+  border: 1px solid lightgray;
+  padding: 10px;
+}
+
+.shifts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .fields {

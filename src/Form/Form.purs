@@ -56,19 +56,18 @@ form = H.mkComponent
     HH.section [ css "shift-form" ]
       ( [ HH.slot (Proxy ∷ Proxy "inner") unit FI.form unit (HandleForm state)
         , HH.section [ css "shifts" ]
-            [ HH.fieldset [ css "fields" ]
-                ( state.options <#> \option →
-                    HH.label_
-                      [ HH.input
-                          [ HP.type_ HP.InputRadio
-                          , HP.name "radio"
-                          , HP.checked (state.picked == option)
-                          , HE.onChange (\_ → ChangeOption option)
-                          , css "radio__button"
-                          ]
-                      , HH.text $ renderOption option
+            ( state.options <#> \option →
+                HH.label_
+                  [ HH.input
+                      [ HP.type_ HP.InputRadio
+                      , HP.name "radio"
+                      , HP.checked (state.picked == option)
+                      , HE.onChange (\_ → ChangeOption option)
+                      , css "radio__button"
                       ]
-                )
-            ]
+                  , HH.text $ renderOption option
+                  ]
+            )
+
         ]
       )

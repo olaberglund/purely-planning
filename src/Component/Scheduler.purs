@@ -54,11 +54,12 @@ render ∷ State → H.ComponentHTML Action Slots Aff
 render state =
   HH.div [ css "app" ]
     [ HH.div [ css "calendar-container" ]
-        [ HH.slot (Proxy ∷ Proxy "calendar") unit C.calendar { now: state.datetime, workdays: state.workdays } HandleDate
-        , HH.button [ onClick (\_ → Reset), css "button" ] [ HH.text "Återställ" ]
+        [ HH.slot (Proxy ∷ Proxy "calendar") unit C.calendar { now: state.datetime, workdays: state.workdays } HandleDate ]
+    , HH.slot (Proxy ∷ Proxy "form") unit F.form (time state.datetime) HandlePicked
+    , HH.div [ css "buttons" ]
+        [ HH.button [ onClick (\_ → Reset), css "button" ] [ HH.text "Återställ" ]
         , HH.button [ onClick (\_ → Export), css "button" ] [ HH.text "Exportera" ]
         ]
-    , HH.slot (Proxy ∷ Proxy "form") unit F.form (time state.datetime) HandlePicked
     ]
 
 handleAction ∷ ∀ cs o m. MonadEffect m ⇒ Action → H.HalogenM State Action cs o m Unit
