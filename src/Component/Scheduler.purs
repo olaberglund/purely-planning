@@ -6,7 +6,7 @@ import Calendar as C
 import Data.Array (delete, elem, take, (:))
 import Data.Date (Date, day, month, year)
 import Data.DateTime (DateTime, time)
-import Data.Enum (fromEnum, toEnum)
+import Data.Enum (fromEnum)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String (joinWith)
@@ -17,7 +17,7 @@ import Form as F
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events (onClick)
-import JSURI (encodeURI, encodeURIComponent)
+import JSURI (encodeURI)
 import Type.Prelude (Proxy(..))
 import Types (Hours(..), Shift(..), Workdays)
 import Utils (css)
@@ -54,11 +54,10 @@ render ∷ State → H.ComponentHTML Action Slots Aff
 render state =
   HH.div [ css "app" ]
     [ HH.div [ css "calendar-container" ]
-        [ HH.slot (Proxy ∷ Proxy "calendar") unit C.calendar { now: state.datetime, workdays: state.workdays } HandleDate ]
-    , HH.slot (Proxy ∷ Proxy "form") unit F.form (time state.datetime) HandlePicked
+        [ HH.slot (Proxy ∷ Proxy "calendar") unit C.calendar { now: state.datetime, workdays: state.workdays } HandleDate, HH.slot (Proxy ∷ Proxy "form") unit F.form (time state.datetime) HandlePicked ]
     , HH.div [ css "buttons" ]
-        [ HH.button [ onClick (\_ → Reset), css "button" ] [ HH.text "Reset" ]
-        , HH.button [ onClick (\_ → Export), css "button" ] [ HH.text "Export" ]
+        [ HH.button [ onClick (\_ → Reset), css "button__reset" ] [ HH.text "Reset" ]
+        , HH.button [ onClick (\_ → Export), css "button__export" ] [ HH.text "Export" ]
         ]
     ]
 

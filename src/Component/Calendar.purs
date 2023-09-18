@@ -5,7 +5,7 @@ import Prelude
 import Data.Array (cons, filter, last, length, mapMaybe, mapWithIndex, replicate, singleton, splitAt)
 import Data.Date (Date, Month(..), Weekday(..), month, weekday, year)
 import Data.Date as Date
-import Data.DateTime (DateTime, date)
+import Data.DateTime (DateTime, date, hour)
 import Data.DateTime as Time
 import Data.Enum (enumFromTo, fromEnum, pred, succ)
 import Data.Map.Internal as Map
@@ -14,7 +14,7 @@ import Data.String as String
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
-import Types (Hours(..), Shift(..), Time(..), Workdays)
+import Types (Hours(..), Shift(..), Workdays)
 import Utils (css)
 
 type Matrix a = Array (Array a)
@@ -60,13 +60,16 @@ render state =
         , HH.thead [ css "calendar__thead" ] tableHeads
         , tableBody
         ]
-    , HH.div [ css "calendar__controls" ]
-        [ HH.button
-            [ css "button", HE.onClick \_ → Previous ]
-            [ HH.text "<" ]
-        , HH.button
-            [ css "button", HE.onClick \_ → Next ]
-            [ HH.text ">" ]
+    , HH.div [ css "calendar__controls_wrapper" ]
+        [ HH.div
+            [ css "calendar__controls" ]
+            [ HH.button
+                [ css "button__navigate", HE.onClick \_ → Previous ]
+                [ HH.text "Previous" ]
+            , HH.button
+                [ css "button__navigate", HE.onClick \_ → Next ]
+                [ HH.text "Next" ]
+            ]
         ]
     ]
   where
@@ -113,7 +116,7 @@ dataCell ws pd =
     ]
 
   spansTwoDays ∷ Hours → Boolean
-  spansTwoDays (Hours { from: Time h1 _, to: Time h2 _ }) = fromEnum h2 < fromEnum h1
+  spansTwoDays (Hours { from: t1, to: t2 }) = hour t2 < hour t1
 
 dayMatrix ∷ ∀ w. Date → Workdays → Matrix (HH.HTML w Action)
 dayMatrix date ws = mapWithIndex addWeek (chunks (length weekdays) paddedDays)

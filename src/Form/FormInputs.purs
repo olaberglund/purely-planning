@@ -9,13 +9,13 @@ import Data.Int (fromString)
 import Data.Maybe (Maybe(..))
 import Data.String.Common (split)
 import Data.String.Pattern (Pattern(..))
+import Data.Time (Time(..))
 import Effect.Aff (Aff)
 import Formless as F
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
-import Types (Time(..))
 import Utils (css)
 
 data Action
@@ -71,7 +71,7 @@ form = F.formless { liftAction: Eval } initialForm hComponent
           let components = splitTime s
           h ← toEnum =<< fromString =<< index components 0
           m ← toEnum =<< fromString =<< index components 1
-          pure $ Time h m
+          Time <$> pure h <*> pure m <*> toEnum 0 <*> toEnum 0
 
         validation ∷ { | Form F.FieldValidation }
         validation =
